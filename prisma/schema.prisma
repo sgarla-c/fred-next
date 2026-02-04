@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model District {
+  distNbr            Int       @id @map("DIST_NBR")
+  distNm             String    @map("DIST_NM") @db.VarChar(50)
+  distAbrvn          String?   @map("DIST_ABRVN") @db.VarChar(3)
+  finArea            String?   @map("FIN_AREA") @db.VarChar(50)
+  finAreaBsnesNbr    String?   @map("FIN_AREA_BSNES_NBR") @db.VarChar(50)
+  rentCoordDistCdNbr String?   @map("RENT_COORD_DIST_CD_NBR") @db.VarChar(50)
+  rentals            Rental[]
+  sections           Section[]
+
+  @@map("DIST")
+}
+
+model Section {
+  sectId   Int      @id @default(autoincrement()) @map("SECT_ID")
+  distNbr  Int      @map("DIST_NBR")
+  sectNbr  String?  @map("SECT_NBR") @db.VarChar(15)
+  sectNm   String?  @map("SECT_NM") @db.VarChar(100)
+  rentals  Rental[]
+  district District @relation(fields: [distNbr], references: [distNbr])
+
+  @@map("SECTION")
+}
+
+model Nigp {
+  nigpCd         String   @id @map("NIGP_CD") @db.VarChar(30)
+  ctgryId        Int?     @map("CTGRY_ID")
+  fnavCat        String?  @map("FNAV_CAT") @db.VarChar(13)
+  dscr           String?  @map("DSCR") @db.VarChar(125)
+  avgMonthlyRate Decimal? @map("AVG_MONTHLY_RATE") @db.Decimal(10, 2)
+  rentals        Rental[]
+
+  @@map("NIGP")
+}
+
+model User {
+  usrId      String    @id @map("USR_ID") @db.VarChar(18)
+  usrRole    String    @map("USR_ROLE") @db.VarChar(50)
+  firstNm    String    @map("FIRST_NM") @db.VarChar(30)
+  lastNm     String    @map("LAST_NM") @db.VarChar(30)
+  usrEmail   String?   @map("USR_EMAIL") @db.VarChar(50)
+  lastUpdtDt DateTime? @map("LAST_UPDT_DT")
+  lastUpdtBy String?   @map("LAST_UPDT_BY") @db.VarChar(20)
+  password   String    @db.VarChar(255)
+
+  @@map("USERS")
+}
+
+model Rental {
+  rentalId          Int       @id @default(autoincrement()) @map("RENTAL_ID")
+  sectId            Int       @map("SECT_ID")
+  distNbr           Int       @map("DIST_NBR")
+  nigpCd            String?   @map("NIGP_CD") @db.VarChar(30)
+  rentStatus        String?   @map("RENT_STATUS") @db.VarChar(50)
+  submitDt          DateTime? @map("SUBMIT_DT") @db.Date
+  dlvryRqstDt       DateTime? @map("DLVRY_RQST_DT") @db.Date
+  dlvryDt           DateTime? @map("DLVRY_DT") @db.Date
+  dlvryTime         String?   @map("DLVRY_TIME") @db.VarChar(10)
+  callOffDt         DateTime? @map("CALL_OFF_DT") @db.Date
+  rentalDueDt       DateTime? @map("RENTAL_DUE_DT") @db.Date
+  rqstBy            String?   @map("RQST_BY") @db.VarChar(50)
+  durLngth          Int?      @map("DUR_LNGTH")
+  durUom            String?   @map("DUR_UOM") @db.VarChar(50)
+  eqpmtModel        String?   @map("EQPMT_MODEL") @db.VarChar(50)
+  eqpmtMake         String?   @map("EQPMT_MAKE") @db.VarChar(100)
+  eqpmtCmnt         String?   @map("EQPMT_CMNT")
+  eqpmtAtchmt       String?   @map("EQPMT_ATCHMT") @db.VarChar(200)
+  eqpmtQty          Int?      @map("EQPMT_Qty")
+  eqpmtQty1         Int?      @map("EQPMT_Qty1")
+  eqpmtQty2         Int?      @map("EQPMT_Qty2")
+  dlvryLocn         String?   @map("DLVRY_LOCN") @db.VarChar(1000)
+  pocNm             String?   @map("POC_NM") @db.VarChar(50)
+  pocPhnNbr         String?   @map("POC_PHN_NBR") @db.VarChar(15)
+  pocScndryNm       String?   @map("POC_SCNDRY_NM") @db.VarChar(50)
+  pocScndryPhnNbr   String?   @map("POC_SCNDRY_PHN_NBR") @db.VarChar(15)
+  cfDeptNbr         String?   @map("CF_DEPT_NBR") @db.VarChar(10)
+  cfAcctNbr         String?   @map("CF_ACCT_NBR") @db.VarChar(10)
+  cfAppropYr        String?   @map("CF_APPROP_YR") @db.VarChar(10)
+  cfAppropClass     String?   @map("CF_APPROP_CLASS") @db.VarChar(10)
+  cfFund            String?   @map("CF_FUND") @db.VarChar(10)
+  cfBusUnit         String?   @map("CF_BUS_UNIT") @db.VarChar(10)
+  cfProj            String?   @map("CF_PROJ") @db.VarChar(20)
+  cfActv            String?   @map("CF_ACTV") @db.VarChar(10)
+  cfSrcType         String?   @map("CF_SRC_TYPE") @db.VarChar(10)
+  cfTask            String?   @map("CF_TASK") @db.VarChar(25)
+  spclInst          String?   @map("SPCL_INST") @db.VarChar(5000)
+  rentCmnt          String?   @map("RENT_CMNT")
+  serviceCallCmnt   String?   @map("SERVICE_CALL_CMNT")
+  rcvdBy            String?   @map("RCVD_BY") @db.VarChar(50)
+  poProcessorNm     String?   @map("PO_PROCESSOR_NM") @db.VarChar(50)
+  poProcessorPhnNbr String?   @map("PO_PROCESSOR_PHN_NBR") @db.VarChar(15)
+  troubleRentFlg    Boolean   @default(false) @map("TROUBLE_RENT_FLG")
+  serviceCallFlg    Boolean?  @map("SERVICE_CALL_FLG")
+  userRequestFlg    Boolean?  @map("USER_REQUEST_FLG")
+  vendrUnitNbr      String?   @map("VENDR_UNIT_NBR")
+  reasonCodes       String?   @map("REASON_CODES") @db.VarChar(50)
+  onRentHrs         Decimal?  @map("ON_RENT_HRS") @db.Decimal(10, 2)
+  offRentHrs        Decimal?  @map("OFF_RENT_HRS") @db.Decimal(10, 2)
+  lastUpdtBy        String?   @map("LAST_UPDT_BY") @db.VarChar(50)
+  lastUpdtDt        DateTime? @map("LAST_UPDT_DT")
+  district          District  @relation(fields: [distNbr], references: [distNbr])
+  nigp              Nigp?     @relation(fields: [nigpCd], references: [nigpCd])
+  section           Section   @relation(fields: [sectId], references: [sectId])
+  rentalPos         RentalPo[]
+
+  @@map("RENTAL")
+}
+
+model PurchaseOrder {
+  poId                 Int         @id @default(autoincrement()) @map("PO_ID")
+  poRlseNbr            String?     @map("PO_RLSE_NBR") @db.VarChar(50)
+  poRcvdBy             String?     @map("PO_RCVD_BY") @db.VarChar(25)
+  vendrNm              String?     @map("VENDR_NM") @db.VarChar(50)
+  userRqstViaPurchFlg  Boolean     @default(false) @map("USER_RQST_VIA_PURCH_FLG")
+  poBuNbr              String?     @map("PO_BU_NBR") @db.VarChar(25)
+  eRqstnNbr            String?     @map("E_RQSTN_NBR") @db.VarChar(25)
+  poStatus             String?     @map("PO_STATUS") @db.VarChar(20)
+  poStartDt            DateTime?   @map("PO_START_DT") @db.Date
+  poExpirDt            DateTime?   @map("PO_EXPIR_DT") @db.Date
+  txdotGps             Boolean     @default(false) @map("TXDOT_GPS")
+  mnthEqRate           Decimal?    @map("MNTH_EQ_RATE") @db.Decimal(10, 2)
+  poType               String?     @map("PO_TYPE") @db.VarChar(50)
+  spclEvnt             String?     @map("SPCL_EVNT") @db.VarChar(100)
+  lastUpdtBy           String?     @map("LAST_UPDT_BY") @db.VarChar(50)
+  lastUpdtDt           DateTime?   @map("LAST_UPDT_DT")
+  chartFieldsFlg       Boolean     @default(false) @map("CHART_FIELDS_FLG")
+  vendorMail           String?     @map("VENDOR_MAIL") @db.VarChar(55)
+  vendorPhnNbr         String?     @map("VENDOR_PHN_NBR") @db.VarChar(20)
+  rentalPos            RentalPo[]
+
+  @@map("PO")
+}
+
+model RentalPo {
+  rentalPoId    Int           @id @default(autoincrement()) @map("RENTAL_PO_ID")
+  rentalId      Int           @map("RENTAL_ID")
+  poId          Int           @map("PO_ID")
+  rental        Rental        @relation(fields: [rentalId], references: [rentalId])
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [poId])
+
+  @@unique([rentalId, poId])
+  @@map("RENTAL_PO")
+}

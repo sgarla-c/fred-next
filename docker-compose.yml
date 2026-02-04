@@ -1,0 +1,84 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: fred-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fred_user
+      POSTGRES_PASSWORD: fred_password_dev
+      POSTGRES_DB: fred_poc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./prisma:/prisma-init
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fred_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fred-network
+
+  # Next.js Application (Development Mode)
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: fred-next-app-dev
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://fred_user:fred_password_dev@postgres:5432/fred_poc
+      - NEXTAUTH_URL=http://localhost:3100
+      - NEXTAUTH_SECRET=your-secret-key-change-in-production
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run dev"
+    networks:
+      - fred-network
+    profiles:
+      - dev
+
+  # Next.js Application (Production Mode)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: fred-next-app
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://fred_user:fred_password_dev@postgres:5432/fred_poc
+      - NEXTAUTH_URL=http://localhost:3100
+      - NEXTAUTH_SECRET=your-secret-key-change-in-production
+      - HOSTNAME=0.0.0.0
+      - PORT=3100
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fred-network
+    profiles:
+      - prod
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  fred-network:
+    driver: bridge

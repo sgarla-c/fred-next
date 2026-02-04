@@ -1,0 +1,32 @@
+# Development Dockerfile for FRED-Next
+# Optimized for hot reload and rapid development
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for Prisma
+RUN apk add --no-cache openssl
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy prisma schema
+COPY prisma ./prisma
+
+# Copy all source code
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+EXPOSE 3100
+
+ENV PORT=3100
+ENV HOSTNAME="0.0.0.0"
+
+# Default command (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]
