@@ -7,9 +7,11 @@ export async function POST(request: NextRequest) {
     
     // Check authentication
     const session = await auth();
-    console.log('Session:', session ? `User: ${session.user.username}, Role: ${session.user.role}` : 'No session');
-    
-    if (!session || !["FIN", "RC", "Manager", "ADMIN"].includes(session.user.role)) {
+    const role = session?.user?.role ?? "";
+    const userLabel = session?.user?.name || session?.user?.id || "unknown";
+    console.log('Session:', session ? `User: ${userLabel}, Role: ${role}` : 'No session');
+
+    if (!session || !["FIN", "RC", "Manager", "ADMIN"].includes(role)) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

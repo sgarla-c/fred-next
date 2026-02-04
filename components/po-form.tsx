@@ -10,10 +10,9 @@ import {
   getVendors,
   getAllowedNextStatuses,
   getPOTypes,
-  getStatusWorkflowInfo,
   type CreatePOData,
 } from "@/app/actions/purchaseOrders";
-import { AlertCircle, Info } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface PurchaseOrder extends CreatePOData {
   poId?: number;
@@ -31,11 +30,6 @@ export function POForm({ purchaseOrder, isEditing = false }: POFormProps) {
   const [vendors, setVendors] = useState<string[]>([]);
   const [allowedStatuses, setAllowedStatuses] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
-  const [statusInfo, setStatusInfo] = useState<{
-    allowedTransitions: string[];
-    isTerminal: boolean;
-    nextSteps: string[];
-  } | null>(null);
 
   const [formData, setFormData] = useState<PurchaseOrder>({
     poRlseNbr: purchaseOrder?.poRlseNbr || "",
@@ -66,7 +60,6 @@ export function POForm({ purchaseOrder, isEditing = false }: POFormProps) {
       setVendors(vendorList.map((v) => v.vendrNm || "").filter(Boolean));
       setAllowedStatuses(statusList);
       setTypes(typeList);
-      setStatusInfo(getStatusWorkflowInfo(purchaseOrder?.poStatus));
     }
     loadOptions();
   }, [purchaseOrder?.poId, purchaseOrder?.poStatus]);
@@ -102,7 +95,7 @@ export function POForm({ purchaseOrder, isEditing = false }: POFormProps) {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
-    
+
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData((prev) => ({ ...prev, [name]: checked }));
@@ -121,31 +114,6 @@ export function POForm({ purchaseOrder, isEditing = false }: POFormProps) {
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-start gap-2">
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <div>{error}</div>
-        </div>
-      )}
-
-      {statusInfo && statusInfo.isTerminal && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded flex items-start gap-2">
-          <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <div>
-            <strong>Terminal Status:</strong> This PO is in a {formData.poStatus} state and cannot be changed to another status.
-          </div>
-        </div>
-      )}
-
-      {statusInfo && statusInfo.nextSteps.length > 0 && !statusInfo.isTerminal && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
-          <div className="flex items-start gap-2">
-            <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-            <div>
-              <strong>Workflow Guidance:</strong>
-              <ul className="mt-1 ml-4 list-disc text-sm">
-                {statusInfo.nextSteps.map((step, idx) => (
-                  <li key={idx}>{step}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       )}
 
@@ -179,7 +147,6 @@ export function POForm({ purchaseOrder, isEditing = false }: POFormProps) {
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 required
-                disabled={statusInfo?.isTerminal}
               >
                 {allowedStatuses.length > 0 ? (
                   allowedStatuses.map((status) => (
@@ -238,23 +205,6 @@ export function POForm({ purchaseOrder, isEditing = false }: POFormProps) {
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 placeholder="Enter name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                name="poStartDt"
-                value={
-                  formData.poStartDt
-                    ? new Date(formData.poStartDt).toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
               />
             </div>
 

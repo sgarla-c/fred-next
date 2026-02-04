@@ -140,6 +140,21 @@ export async function submitRental(data: any) {
       },
     });
 
+    // Record status history: Submitted
+    try {
+      await prisma.rentalStatusHistory.create({
+        data: {
+          rentalId: rental.rentalId,
+          status: "Submitted",
+          actorId: session.user.id,
+          actorName: (session.user.name as string) || null,
+          note: "Initial submission",
+        },
+      });
+    } catch (histError) {
+      console.error("Error recording submission history:", histError);
+    }
+
     // Send email notification to RC users
     try {
       // Get all RC users with email addresses
@@ -214,6 +229,20 @@ export async function updateRentalStatus(rentalId: number, status: string) {
         ...(status === "Active" && { rcvdBy: session.user.name || session.user.id }),
       },
     });
+
+    // Record status history
+    try {
+      await prisma.rentalStatusHistory.create({
+        data: {
+          rentalId,
+          status,
+          actorId: session.user.id,
+          actorName: (session.user.name as string) || null,
+        },
+      });
+    } catch (histError) {
+      console.error("Error recording status history:", histError);
+    }
 
     revalidatePath("/rc/rentals");
     revalidatePath(`/rc/rentals/${rentalId}`);
@@ -310,6 +339,21 @@ export async function denyRental(rentalId: number, denialReason?: string) {
       },
     });
 
+    // Record status history: Denied
+    try {
+      await prisma.rentalStatusHistory.create({
+        data: {
+          rentalId,
+          status: "Denied",
+          actorId: session.user.id,
+          actorName: (session.user.name as string) || null,
+          note: denialReason,
+        },
+      });
+    } catch (histError) {
+      console.error("Error recording denial history:", histError);
+    }
+
     revalidatePath("/rc/rentals");
     revalidatePath(`/rc/rentals/${rentalId}`);
     revalidatePath("/rc/dashboard");
@@ -399,6 +443,21 @@ export async function updateAndResubmitRental(rentalId: number, data: any) {
         nigp: true,
       },
     });
+
+    // Record status history: Resubmitted
+    try {
+      await prisma.rentalStatusHistory.create({
+        data: {
+          rentalId,
+          status: "Resubmitted",
+          actorId: session.user.id,
+          actorName: (session.user.name as string) || null,
+          note: "Rental updated and resubmitted",
+        },
+      });
+    } catch (histError) {
+      console.error("Error recording resubmission history:", histError);
+    }
 
     // Send email notification to RC users
     try {

@@ -210,7 +210,7 @@ async function main() {
     throw error;
   } finally {
     // Close connections
-    await sql.close();
+    await (sql as any).close?.();
     await prisma.$disconnect();
   }
 }

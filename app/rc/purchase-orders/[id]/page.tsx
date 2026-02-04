@@ -92,7 +92,7 @@ export default async function PurchaseOrderPage({
   // Serialize Decimal fields
   const availableRentals = availableRentalsData.map(serializeDecimal);
 
-  const linkedRentals = purchaseOrder.rentalPos.map((rp) => ({
+  const linkedRentals = purchaseOrder.rentalPos.map((rp: any) => ({
     rentalId: rp.rental.rentalId,
     rqstBy: rp.rental.rqstBy,
     rentStatus: rp.rental.rentStatus,

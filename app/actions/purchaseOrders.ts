@@ -436,7 +436,8 @@ export async function getPOTypes() {
 export async function queryPeopleSoftPO(businessUnit: string, poId: string) {
   try {
     const session = await auth();
-    if (!session || !["RC", "Manager", "ADMIN"].includes(session.user.role)) {
+    const role = session?.user?.role ?? "";
+    if (!session || !["RC", "Manager", "ADMIN"].includes(role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -469,7 +470,8 @@ export async function queryPeopleSoftPO(businessUnit: string, poId: string) {
 export async function importPOFromPeopleSoft(businessUnit: string, poId: string) {
   try {
     const session = await auth();
-    if (!session || !["RC", "Manager", "ADMIN"].includes(session.user.role)) {
+    const role = session?.user?.role ?? "";
+    if (!session || !["RC", "Manager", "ADMIN"].includes(role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -498,7 +500,7 @@ export async function importPOFromPeopleSoft(businessUnit: string, poId: string)
     const newPO = await prisma.purchaseOrder.create({
       data: {
         ...transformed,
-        lastUpdtBy: session.user.username,
+        lastUpdtBy: session.user.name ?? "",
       },
     });
 

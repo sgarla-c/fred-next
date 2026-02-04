@@ -111,6 +111,7 @@ model Rental {
   nigp              Nigp?     @relation(fields: [nigpCd], references: [nigpCd])
   section           Section   @relation(fields: [sectId], references: [sectId])
   rentalPos         RentalPo[]
+  statusHistory     RentalStatusHistory[]
 
   @@map("RENTAL")
 }
@@ -149,4 +150,18 @@ model RentalPo {
 
   @@unique([rentalId, poId])
   @@map("RENTAL_PO")
+}
+
+model RentalStatusHistory {
+  id        Int      @id @default(autoincrement()) @map("HIST_ID")
+  rentalId  Int      @map("RENTAL_ID")
+  status    String   @map("STATUS") @db.VarChar(50)
+  actorId   String?  @map("ACTOR_ID") @db.VarChar(50)
+  actorName String?  @map("ACTOR_NM") @db.VarChar(50)
+  note      String?  @map("NOTE") @db.VarChar(2000)
+  createdAt DateTime @default(now()) @map("CREATED_AT")
+
+  rental    Rental   @relation(fields: [rentalId], references: [rentalId])
+
+  @@map("RENTAL_STATUS_HISTORY")
 }

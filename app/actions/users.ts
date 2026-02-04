@@ -76,7 +76,7 @@ export async function resetUserPassword(usrId: string, newPassword: string) {
     await prisma.user.update({
       where: { usrId },
       data: {
-        usrPwd: hashedPassword,
+        password: hashedPassword,
         lastUpdtBy: session.user.id,
         lastUpdtDt: new Date(),
       },

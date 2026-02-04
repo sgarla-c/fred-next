@@ -75,7 +75,7 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
     orderBy: { poId: "desc" },
   });
 
-  const linkedPOs = rental.rentalPos.map((rp) => rp.purchaseOrder);
+  const linkedPOs = rental.rentalPos.map((rp: any) => rp.purchaseOrder);
 
   return (
     <div className="space-y-6">

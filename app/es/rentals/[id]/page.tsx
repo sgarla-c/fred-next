@@ -72,7 +72,7 @@ export default async function ESRentalDetailPage({ params }: RentalDetailPagePro
     notFound();
   }
 
-  const linkedPOs = rental.rentalPos.map((rp) => rp.purchaseOrder);
+  const linkedPOs = rental.rentalPos.map((rp: any) => rp.purchaseOrder);
 
   return (
     <div className="space-y-6">
@@ -290,7 +290,7 @@ export default async function ESRentalDetailPage({ params }: RentalDetailPagePro
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {linkedPOs.map((po) => (
+                  {linkedPOs.map((po: any) => (
                     <div
                       key={po.poId}
                       className="flex items-center justify-between p-3 border rounded-lg"

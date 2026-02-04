@@ -7,7 +7,7 @@ export const rentalFormSchema = z.object({
   
   // Equipment
   nigpCd: z.string().min(1, "Equipment type is required"),
-  eqpmtQty: z.number().min(1, "Quantity must be at least 1").default(1),
+  eqpmtQty: z.number().min(1, "Quantity must be at least 1"),
   eqpmtMake: z.string().optional(),
   eqpmtModel: z.string().optional(),
   eqpmtCmnt: z.string().optional(),

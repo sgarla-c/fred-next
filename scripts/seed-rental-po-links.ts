@@ -95,21 +95,16 @@ async function main() {
         // Create or update the link
         await prisma.rentalPo.upsert({
           where: {
-            rentalId_poId_fiscalYr: {
+            rentalId_poId: {
               rentalId: link.RENTAL_ID,
               poId: link.PO_ID,
-              fiscalYr: link.FISCAL_YR,
             },
           },
           create: {
             rentalId: link.RENTAL_ID,
             poId: link.PO_ID,
-            fiscalYr: link.FISCAL_YR,
-            rlseAmt: link.RLSE_AMT,
           },
-          update: {
-            rlseAmt: link.RLSE_AMT,
-          },
+          update: {},
         });
 
         imported++;
@@ -165,7 +160,7 @@ async function main() {
     throw error;
   } finally {
     // Close connections
-    await sql.close();
+    await (sql as any).close?.();
     await prisma.$disconnect();
   }
 }
