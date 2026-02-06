@@ -72,7 +72,8 @@ export default async function ESRentalDetailPage({ params }: RentalDetailPagePro
     notFound();
   }
 
-  const linkedPOs = rental.rentalPos.map((rp: any) => rp.purchaseOrder);
+  // Serialize linked POs to avoid Decimal serialization errors
+  const linkedPOs = rental.rentalPos.map((rp: any) => serializeDecimal(rp.purchaseOrder));
 
   return (
     <div className="space-y-6">

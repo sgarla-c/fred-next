@@ -39,6 +39,33 @@ interface PeopleSoftPO {
   [key: string]: any;
 }
 
+interface PeopleSoftReceiptResponse {
+  status: string;
+  data: {
+    query: {
+      numrows: number;
+      queryname: string;
+      rows: PeopleSoftReceipt[];
+    };
+  };
+}
+
+interface PeopleSoftReceipt {
+  'attr:rownumber': number;
+  'A.RECEIVER_ID': string;
+  'A.PO_ID': string;
+  'A.BUSINESS_UNIT': string;
+  'A.RECV_DT': string;
+  'A.INV_ITEM_ID': string;
+  'A.DESCR254_MIXED': string;
+  'A.QTY_RCVD': number;
+  'A.UNIT_PRICE': number;
+  'A.MERCHANDISE_AMT': number;
+  'A.LINE_NBR'?: number;
+  'A.RECV_LN_NBR'?: number;
+  [key: string]: any;
+}
+
 export class PeopleSoftClient {
   private username = 'X_WS_MULESOFT';
   private password = 'TxDOT#123TxDOT#123';
@@ -160,6 +187,101 @@ export class PeopleSoftClient {
     return {
       raw: po,
       transformed: this.transformPOData(po)
+    };
+  }
+
+  /**
+   * Query Receipt by Business Unit and Receipt ID
+   */
+  async queryReceipt(businessUnit: string, receiptId: string): Promise<PeopleSoftReceiptResponse> {
+    // Pad receipt ID with leading zeros to make it 10 characters
+    const paddedReceiptId = receiptId.toString().padStart(10, '0');
+    
+    const url = `${this.baseUrl}/X_WS_RECV/JSON/NONFILE?isconnectedquery=n&maxrows=999&prompt_uniquepromptname=BU,RECV&prompt_fieldvalue=${businessUnit},${paddedReceiptId}&json_resp=true`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': this.getAuthHeader(),
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`PeopleSoft Receipt API Error (${response.status}):`, errorText.substring(0, 500));
+        throw new Error(`PeopleSoft API returned status ${response.status}: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response received:', text.substring(0, 500));
+        throw new Error(`Expected JSON response but got ${contentType}. Response: ${text.substring(0, 200)}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error querying PeopleSoft Receipt:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Receipt details with formatted output
+   */
+  async getReceiptDetails(businessUnit: string, receiptId: string) {
+    console.log(`\n🔍 Querying Receipt: ${businessUnit} - ${receiptId}`);
+    
+    const response = await this.queryReceipt(businessUnit, receiptId);
+    
+    if (response.status !== 'success') {
+      throw new Error('PeopleSoft API returned non-success status');
+    }
+
+    const rows = response.data.query.rows;
+    
+    if (!rows || rows.length === 0) {
+      console.log('❌ No Receipt found');
+      return null;
+    }
+
+    console.log(`\n✅ Receipt Found: ${rows.length} line(s)`);
+    
+    return {
+      receipts: rows,
+      summary: this.summarizeReceipt(rows)
+    };
+  }
+
+  /**
+   * Summarize receipt data
+   */
+  private summarizeReceipt(receipts: PeopleSoftReceipt[]) {
+    if (!receipts || receipts.length === 0) return null;
+
+    const firstReceipt = receipts[0];
+    const totalAmount = receipts.reduce((sum, r) => sum + (r['A.MERCHANDISE_AMT'] || 0), 0);
+    const totalQty = receipts.reduce((sum, r) => sum + (r['A.QTY_RCVD'] || 0), 0);
+
+    return {
+      receiverId: firstReceipt['A.RECEIVER_ID'] || '',
+      poId: firstReceipt['A.PO_ID'] || '',
+      businessUnit: firstReceipt['A.BUSINESS_UNIT'] || '',
+      receiptDate: firstReceipt['A.RECV_DT'] || '',
+      lineCount: receipts.length,
+      totalAmount,
+      totalQuantity: totalQty,
+      items: receipts.map(r => ({
+        lineNumber: r['A.LINE_NBR'] || r['A.RECV_LN_NBR'] || 0,
+        itemId: r['A.INV_ITEM_ID'] || '',
+        description: r['A.DESCR254_MIXED'] || '',
+        quantity: r['A.QTY_RCVD'] || 0,
+        unitPrice: r['A.UNIT_PRICE'] || 0,
+        amount: r['A.MERCHANDISE_AMT'] || 0,
+      }))
     };
   }
 }

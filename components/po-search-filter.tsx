@@ -118,10 +118,17 @@ export function POSearchFilter() {
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="">All Types</option>
+                  <option value="Rent">Rent</option>
+                  <option value="Journal Entry">Journal Entry</option>
+                  <option value="Weather Rent">Weather Rent</option>
+                  <option value="Fuel">Fuel</option>
+                  <option value="Additional Shipping">Additional Shipping</option>
+                  <option value="Damage">Damage</option>
+                  <option value="Tax">Tax</option>
+                  <option value="Weather Misc">Weather Misc</option>
+                  <option value="Weather Shipping">Weather Shipping</option>
                   <option value="Standard">Standard</option>
-                  <option value="Fleet">Fleet</option>
-                  <option value="Call-Off">Call-Off</option>
-                  <option value="Emergency">Emergency</option>
+                  <option value="Error">Error</option>
                 </select>
               </div>
 

@@ -102,7 +102,7 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* District and Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -199,6 +199,17 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
         </div>
       </div>
 
+      {/* Equipment Comments & Attachments */}
+      <div className="space-y-2">
+        <Label htmlFor="eqpmtCmnt">Equipment Comments</Label>
+        <Input id="eqpmtCmnt" {...register("eqpmtCmnt")} placeholder="Optional equipment notes" />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="eqpmtAtchmt">Equipment Attachments</Label>
+        <Input id="eqpmtAtchmt" {...register("eqpmtAtchmt")} placeholder="List any attachments or accessories needed" />
+      </div>
+
       {/* Duration */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
@@ -284,33 +295,33 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
         </div>
       </div>
 
-      {/* Chartfields Section */}
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-medium mb-4">Chartfield Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="cfDeptNbr">Department Number</Label>
-            <Input id="cfDeptNbr" {...register("cfDeptNbr")} />
+      {/* Chartfields Section - Compact */}
+      <div className="border-t pt-4">
+        <h3 className="text-base font-medium mb-3">Chartfield Information (Optional)</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="cfDeptNbr" className="text-sm">Dept #</Label>
+            <Input id="cfDeptNbr" {...register("cfDeptNbr")} className="h-9" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfAcctNbr">Account Number</Label>
-            <Input id="cfAcctNbr" {...register("cfAcctNbr")} />
+          <div className="space-y-1">
+            <Label htmlFor="cfAcctNbr" className="text-sm">Acct #</Label>
+            <Input id="cfAcctNbr" {...register("cfAcctNbr")} className="h-9" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfAppropYr">Appropriation Year</Label>
-            <Input id="cfAppropYr" {...register("cfAppropYr")} />
+          <div className="space-y-1">
+            <Label htmlFor="cfAppropYr" className="text-sm">Approp Yr</Label>
+            <Input id="cfAppropYr" {...register("cfAppropYr")} className="h-9" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfFund">Fund</Label>
-            <Input id="cfFund" {...register("cfFund")} />
+          <div className="space-y-1">
+            <Label htmlFor="cfFund" className="text-sm">Fund</Label>
+            <Input id="cfFund" {...register("cfFund")} className="h-9" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfBusUnit">Business Unit</Label>
-            <Input id="cfBusUnit" {...register("cfBusUnit")} />
+          <div className="space-y-1">
+            <Label htmlFor="cfBusUnit" className="text-sm">Bus Unit</Label>
+            <Input id="cfBusUnit" {...register("cfBusUnit")} className="h-9" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfProj">Project</Label>
-            <Input id="cfProj" {...register("cfProj")} />
+          <div className="space-y-1">
+            <Label htmlFor="cfProj" className="text-sm">Project</Label>
+            <Input id="cfProj" {...register("cfProj")} className="h-9" />
           </div>
         </div>
       </div>
@@ -321,7 +332,7 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
         <textarea
           id="spclInst"
           {...register("spclInst")}
-          className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
           placeholder="Any special instructions or comments..."
         />
       </div>

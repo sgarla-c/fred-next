@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ReceiptLink } from "@/components/receipt-link";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Decimal } from "@prisma/client/runtime/library";
@@ -31,21 +32,41 @@ interface FINInvoicesPageProps {
 
 export default async function FINInvoicesPage({ searchParams }: FINInvoicesPageProps) {
   const params = await searchParams;
-  const statusFilter = params.status || "";
+  const statusFilterParam = params.status || "";
   const searchQuery = params.search?.toLowerCase() || "";
+
+  // Parse multiple statuses separated by comma
+  const selectedStatuses = statusFilterParam ? statusFilterParam.split(',').filter(Boolean) : [];
 
   const whereClause: any = {};
   
-  if (statusFilter) {
-    whereClause.INVC_STAT = statusFilter;
+  if (selectedStatuses.length > 0) {
+    // Filter by multiple statuses using OR condition
+    whereClause.OR = selectedStatuses.map(status => ({
+      OR: [
+        { INVC_STAT: status },
+        { FIN_STAT: status }
+      ]
+    }));
   }
 
   if (searchQuery) {
-    whereClause.OR = [
+    const searchConditions = [
       { INVC_NBR: { contains: searchQuery, mode: 'insensitive' } },
       { RCPT_NBR: { contains: searchQuery, mode: 'insensitive' } },
       { FIN_ID: { contains: searchQuery, mode: 'insensitive' } },
     ];
+    
+    if (whereClause.OR) {
+      // Combine status filter with search using AND
+      whereClause.AND = [
+        { OR: whereClause.OR },
+        { OR: searchConditions }
+      ];
+      delete whereClause.OR;
+    } else {
+      whereClause.OR = searchConditions;
+    }
   }
 
   const invoicesData = await prisma.INVC.findMany({
@@ -68,7 +89,14 @@ export default async function FINInvoicesPage({ searchParams }: FINInvoicesPageP
   });
 
   const invoices = invoicesData.map(serializeDecimal);
-  const allStatuses = ["Submitted", "Pending", "Approved", "Processed", "Rejected"];
+
+  // Get unique status values from actual invoice data (both INVC_STAT and FIN_STAT)
+  const uniqueStatuses = [...new Set(
+    invoicesData.flatMap((inv: any) => [
+      inv.INVC_STAT,
+      inv.FIN_STAT
+    ]).filter((status: any) => status !== null && status !== undefined)
+  )].sort() as string[];
 
   return (
     <div className="space-y-6">
@@ -90,30 +118,44 @@ export default async function FINInvoicesPage({ searchParams }: FINInvoicesPageP
                   className="w-full"
                 />
               </div>
-              <input type="hidden" name="status" value={statusFilter} />
               <Button type="submit">Search</Button>
-              {(searchQuery || statusFilter) && (
+              {(searchQuery || selectedStatuses.length > 0) && (
                 <Link href="/fin/invoices">
-                  <Button type="button" variant="outline">Clear</Button>
+                  <Button type="button" variant="outline">Clear All</Button>
                 </Link>
               )}
             </div>
             
-            {/* Status Filters */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm font-medium text-gray-700 self-center">Filter by status:</span>
-              {allStatuses.map((status) => (
-                <Link key={status} href={`/fin/invoices?status=${status}${searchQuery ? `&search=${searchQuery}` : ''}`}>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={statusFilter === status ? "default" : "outline"}
-                  >
-                    {status}
-                  </Button>
-                </Link>
-              ))}
-            </div>
+            {/* Status Filters - Multi-select */}
+            {uniqueStatuses.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm font-medium text-gray-700 self-center">Filter by status:</span>
+                {uniqueStatuses.map((status) => {
+                  const isSelected = selectedStatuses.includes(status);
+                  // Toggle status in the array
+                  const newStatuses = isSelected
+                    ? selectedStatuses.filter(s => s !== status)
+                    : [...selectedStatuses, status];
+                  const statusParam = newStatuses.length > 0 ? `status=${newStatuses.join(',')}` : '';
+                  const searchParam = searchQuery ? `search=${searchQuery}` : '';
+                  const params = [statusParam, searchParam].filter(Boolean).join('&');
+                  const href = params ? `/fin/invoices?${params}` : '/fin/invoices';
+                  
+                  return (
+                    <Link key={status} href={href}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                      >
+                        {status}
+                        {isSelected && ' ✓'}
+                      </Button>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -123,9 +165,9 @@ export default async function FINInvoicesPage({ searchParams }: FINInvoicesPageP
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-16 w-16 text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery || statusFilter ? "No matching invoices found" : "No invoices found"}
+              {searchQuery || selectedStatuses.length > 0 ? "No matching invoices found" : "No invoices found"}
             </h3>
-            {(searchQuery || statusFilter) && (
+            {(searchQuery || selectedStatuses.length > 0) && (
               <p className="text-gray-600">Try adjusting your search or filter criteria</p>
             )}
           </CardContent>
@@ -139,6 +181,21 @@ export default async function FINInvoicesPage({ searchParams }: FINInvoicesPageP
             {invoices.map((invoice: any) => {
               const totalAmount = invoice.INVC_LN?.reduce((sum: number, line: any) => 
                 sum + (Number(line.ITEM_AMT) || 0), 0) || 0;
+
+              // Get business unit from first PO in invoice lines (first 5 chars)
+              const firstPO = invoice.INVC_LN?.find((line: any) => line.PO?.poBuNbr)?.PO;
+              const businessUnit = firstPO?.poBuNbr?.substring(0, 5);
+              
+              // Debug logging
+              if (invoice.RCPT_NBR) {
+                console.log('📋 Invoice receipt info:', {
+                  invoiceId: invoice.INVC_ID,
+                  receiptNbr: invoice.RCPT_NBR,
+                  businessUnit,
+                  poBuNbr: firstPO?.poBuNbr,
+                  hasInvoiceLines: !!invoice.INVC_LN?.length
+                });
+              }
 
               return (
                 <Card key={invoice.INVC_ID} className="hover:shadow-md transition-shadow">
@@ -192,7 +249,14 @@ export default async function FINInvoicesPage({ searchParams }: FINInvoicesPageP
                       </div>
                       <div>
                         <p className="text-gray-600">Receipt #</p>
-                        <p className="font-medium">{invoice.RCPT_NBR || "N/A"}</p>
+                        {invoice.RCPT_NBR ? (
+                          <ReceiptLink
+                            receiptNumber={invoice.RCPT_NBR}
+                            businessUnit={businessUnit}
+                          />
+                        ) : (
+                          <p className="font-medium">N/A</p>
+                        )}
                       </div>
                       <div>
                         <p className="text-gray-600">FIN Stamp</p>

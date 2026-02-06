@@ -62,7 +62,7 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
   const rental = serializeDecimal(rentalData);
 
   // Get all POs that are not already linked to this rental
-  const availablePOs = await prisma.purchaseOrder.findMany({
+  const availablePOsData = await prisma.purchaseOrder.findMany({
     where: {
       NOT: {
         rentalPos: {
@@ -75,7 +75,11 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
     orderBy: { poId: "desc" },
   });
 
-  const linkedPOs = rental.rentalPos.map((rp: any) => rp.purchaseOrder);
+  // Serialize available POs to avoid Decimal serialization errors
+  const availablePOs = availablePOsData.map(serializeDecimal);
+
+  // Serialize linked POs to avoid Decimal serialization errors
+  const linkedPOs = rental.rentalPos.map((rp: any) => serializeDecimal(rp.purchaseOrder));
 
   return (
     <div className="space-y-6">

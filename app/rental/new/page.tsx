@@ -34,15 +34,15 @@ export default async function RentalNewPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <NavBar user={session.user} />
       
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Submit Rental Request</h1>
-          <p className="text-gray-600 mt-2">
+      <main className="container mx-auto px-4 py-4 max-w-6xl">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Submit Rental Request</h1>
+          <p className="text-gray-600 mt-1 text-sm">
             Complete the form below to submit a new equipment rental request.
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
           <RentalForm 
             districts={districtsResult.data || []} 
             nigpCodes={nigpResult.data || []} 

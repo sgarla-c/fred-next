@@ -11,6 +11,7 @@ export const rentalFormSchema = z.object({
   eqpmtMake: z.string().optional(),
   eqpmtModel: z.string().optional(),
   eqpmtCmnt: z.string().optional(),
+  eqpmtAtchmt: z.string().optional(),
   
   // Duration
   dlvryRqstDt: z.string().min(1, "Delivery date is required"),
