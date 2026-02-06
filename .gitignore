@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Exported SQL Server data (contains sensitive information)
 scripts/exported-data/
+
+# Database backups (contains sensitive data)
+backups/*
+!backups/README.md
