@@ -32,19 +32,23 @@ export async function updateUser(data: UpdateUserData) {
   }
 
   try {
+    const updateData: any = {
+      lastUpdtBy: session.user.id,
+      lastUpdtDt: new Date(),
+    };
+
+    // Update fields only if they are provided in data
+    if (data.firstNm !== undefined) updateData.firstNm = data.firstNm;
+    if (data.lastNm !== undefined) updateData.lastNm = data.lastNm;
+    if (data.usrEmail !== undefined) updateData.usrEmail = data.usrEmail || null;
+    if (data.usrRole !== undefined) updateData.usrRole = data.usrRole;
+    if (data.usrPhnNbr !== undefined) updateData.usrPhnNbr = data.usrPhnNbr || null;
+    if (data.distNbr !== undefined) updateData.distNbr = data.distNbr || null;
+    if (data.sectId !== undefined) updateData.sectId = data.sectId || null;
+
     const user = await prisma.user.update({
       where: { usrId: data.usrId },
-      data: {
-        ...(data.firstNm && { firstNm: data.firstNm }),
-        ...(data.lastNm && { lastNm: data.lastNm }),
-        ...(data.usrEmail && { usrEmail: data.usrEmail }),
-        ...(data.usrRole && { usrRole: data.usrRole }),
-        ...(data.usrPhnNbr && { usrPhnNbr: data.usrPhnNbr }),
-        ...(data.distNbr && { distNbr: data.distNbr }),
-        ...(data.sectId && { sectId: data.sectId }),
-        lastUpdtBy: session.user.id,
-        lastUpdtDt: new Date(),
-      },
+      data: updateData,
     });
 
     revalidatePath("/manager/users");

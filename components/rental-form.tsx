@@ -30,6 +30,7 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sections, setSections] = useState<Array<{ sectId: number; sectNbr: string | null; sectNm: string | null }>>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<number | null>(existingRental?.distNbr || null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const {
     register,
@@ -69,30 +70,62 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
     
     try {
       let result;
+      let rentalId: number | undefined;
       
       if (isEdit && existingRental?.rentalId) {
         // Update existing rental
         result = await updateAndResubmitRental(existingRental.rentalId, data);
+        rentalId = existingRental.rentalId;
         
         if (result.success) {
-          toast.success("Rental request updated and resubmitted successfully!");
-          router.push(`/es/rentals/${existingRental.rentalId}`);
-          router.refresh();
+          toast.success("Rental request updated successfully!");
         } else {
           toast.error(result.error || "Failed to update rental request");
+          setIsSubmitting(false);
+          return;
         }
       } else {
         // Submit new rental
         result = await submitRental(data);
         
-        if (result.success) {
+        if (result.success && result.data?.rentalId) {
+          rentalId = result.data.rentalId;
           toast.success("Rental request submitted successfully!");
-          router.push("/es/rentals");
-          router.refresh();
         } else {
           toast.error(result.error || "Failed to submit rental request");
+          setIsSubmitting(false);
+          return;
         }
       }
+
+      // Upload pending files if any
+      if (rentalId && pendingFiles.length > 0) {
+        toast.info(`Uploading ${pendingFiles.length} attachment(s)...`);
+        
+        for (const file of pendingFiles) {
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            
+            const uploadResponse = await fetch(`/api/rentals/${rentalId}/attachments`, {
+              method: "POST",
+              body: formData,
+            });
+            
+            if (!uploadResponse.ok) {
+              console.error(`Failed to upload ${file.name}`);
+            }
+          } catch (error) {
+            console.error(`Error uploading ${file.name}:`, error);
+          }
+        }
+        
+        toast.success("Attachments uploaded!");
+      }
+
+      // Navigate to the rental detail page
+      router.push(`/es/rentals/${rentalId}`);
+      router.refresh();
     } catch (error) {
       toast.error("An error occurred. Please try again.");
       console.error("Submit error:", error);
@@ -102,11 +135,11 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
       {/* District and Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="distNbr">District *</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="distNbr" className="text-xs">District *</Label>
           <Select
             onValueChange={(value) => {
               const distNum = parseInt(value);
@@ -130,8 +163,8 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sectId">Section *</Label>
+        <div className="space-y-1">
+          <Label htmlFor="sectId" className="text-xs">Section *</Label>
           <Select
             onValueChange={(value) => setValue("sectId", parseInt(value))}
             disabled={!selectedDistrict || sections.length === 0}
@@ -153,30 +186,30 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
         </div>
       </div>
 
-      {/* Equipment Selection */}
-      <div className="space-y-2">
-        <Label htmlFor="nigpCd">Equipment Type (NIGP) *</Label>
-        <Select onValueChange={(value) => setValue("nigpCd", value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select equipment type" />
-          </SelectTrigger>
-          <SelectContent>
-            {nigpCodes.map((code) => (
-              <SelectItem key={code.nigpCd} value={code.nigpCd}>
-                {code.nigpCd} - {code.dscr}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.nigpCd && (
-          <p className="text-sm text-red-600">{errors.nigpCd.message}</p>
-        )}
-      </div>
+      {/* Equipment Selection and Details */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="space-y-1 md:col-span-4">
+          <Label htmlFor="nigpCd" className="text-xs">Equipment Type (NIGP) *</Label>
+          <Select onValueChange={(value) => setValue("nigpCd", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select equipment type" />
+            </SelectTrigger>
+            <SelectContent>
+              {nigpCodes.map((code) => (
+                <SelectItem key={code.nigpCd} value={code.nigpCd}>
+                  {code.nigpCd} - {code.dscr}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.nigpCd && (
+            <p className="text-sm text-red-600">{errors.nigpCd.message}</p>
+          )}
+        </div>
 
-      {/* Equipment Details */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="eqpmtQty">Quantity *</Label>
+
+        <div className="space-y-1">
+          <Label htmlFor="eqpmtQty" className="text-xs">Quantity *</Label>
           <Input
             id="eqpmtQty"
             type="number"
@@ -188,21 +221,21 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="eqpmtMake">Make</Label>
+        <div className="space-y-1">
+          <Label htmlFor="eqpmtMake" className="text-xs">Make</Label>
           <Input id="eqpmtMake" {...register("eqpmtMake")} placeholder="Optional" />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="eqpmtModel">Model</Label>
+        <div className="space-y-1">
+          <Label htmlFor="eqpmtModel" className="text-xs">Model</Label>
           <Input id="eqpmtModel" {...register("eqpmtModel")} placeholder="Optional" />
         </div>
       </div>
 
-      {/* Duration */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="dlvryRqstDt">Delivery Date *</Label>
+      {/* Duration and Delivery */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="dlvryRqstDt" className="text-xs">Delivery Date *</Label>
           <Input
             id="dlvryRqstDt"
             type="date"
@@ -213,8 +246,8 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="durLngth">Duration *</Label>
+        <div className="space-y-1">
+          <Label htmlFor="durLngth" className="text-xs">Duration *</Label>
           <Input
             id="durLngth"
             type="number"
@@ -226,8 +259,8 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="durUom">Unit *</Label>
+        <div className="space-y-1">
+          <Label htmlFor="durUom" className="text-xs">Unit *</Label>
           <Select
             defaultValue="Months"
             onValueChange={(value) => setValue("durUom", value)}
@@ -245,33 +278,31 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
             <p className="text-sm text-red-600">{errors.durUom.message}</p>
           )}
         </div>
-      </div>
-
-      {/* Delivery Location */}
-      <div className="space-y-2">
-        <Label htmlFor="dlvryLocn">Delivery Location *</Label>
-        <Input
-          id="dlvryLocn"
-          {...register("dlvryLocn")}
-          placeholder="Street address, city, etc."
-        />
-        {errors.dlvryLocn && (
-          <p className="text-sm text-red-600">{errors.dlvryLocn.message}</p>
-        )}
+        <div className="space-y-1 md:col-span-4">
+          <Label htmlFor="dlvryLocn" className="text-xs">Delivery Location *</Label>
+          <Input
+            id="dlvryLocn"
+            {...register("dlvryLocn")}
+            placeholder="Street address, city, etc."
+          />
+          {errors.dlvryLocn && (
+            <p className="text-sm text-red-600">{errors.dlvryLocn.message}</p>
+          )}
+        </div>
       </div>
 
       {/* Contact Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="pocNm">Contact Name *</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="pocNm" className="text-xs">Contact Name *</Label>
           <Input id="pocNm" {...register("pocNm")} />
           {errors.pocNm && (
             <p className="text-sm text-red-600">{errors.pocNm.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="pocPhnNbr">Contact Phone *</Label>
+        <div className="space-y-1">
+          <Label htmlFor="pocPhnNbr" className="text-xs">Contact Phone *</Label>
           <Input
             id="pocPhnNbr"
             type="tel"
@@ -285,49 +316,94 @@ export function RentalForm({ districts, nigpCodes, existingRental, isEdit = fals
       </div>
 
       {/* Chartfields Section */}
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-medium mb-4">Chartfield Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="cfDeptNbr">Department Number</Label>
+      <div className="border-t pt-2">
+        <h3 className="text-sm font-medium mb-1">Chartfield Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="cfDeptNbr" className="text-xs">Dept #</Label>
             <Input id="cfDeptNbr" {...register("cfDeptNbr")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfAcctNbr">Account Number</Label>
+          <div className="space-y-1">
+            <Label htmlFor="cfAcctNbr" className="text-xs">Acct #</Label>
             <Input id="cfAcctNbr" {...register("cfAcctNbr")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfAppropYr">Appropriation Year</Label>
+          <div className="space-y-1">
+            <Label htmlFor="cfAppropYr" className="text-xs">Approp Yr</Label>
             <Input id="cfAppropYr" {...register("cfAppropYr")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfFund">Fund</Label>
+          <div className="space-y-1">
+            <Label htmlFor="cfFund" className="text-xs">Fund</Label>
             <Input id="cfFund" {...register("cfFund")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfBusUnit">Business Unit</Label>
+          <div className="space-y-1">
+            <Label htmlFor="cfBusUnit" className="text-xs">Bus Unit</Label>
             <Input id="cfBusUnit" {...register("cfBusUnit")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cfProj">Project</Label>
+          <div className="space-y-1">
+            <Label htmlFor="cfProj" className="text-xs">Project</Label>
             <Input id="cfProj" {...register("cfProj")} />
           </div>
         </div>
       </div>
 
-      {/* Special Instructions */}
-      <div className="space-y-2">
-        <Label htmlFor="spclInst">Special Instructions</Label>
-        <textarea
-          id="spclInst"
-          {...register("spclInst")}
-          className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Any special instructions or comments..."
+      {/* Special Instructions and File Attachments */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="spclInst" className="text-xs">Special Instructions</Label>
+          <textarea
+            id="spclInst"
+            {...register("spclInst")}
+            className="w-full min-h-[50px] rounded-md border border-input bg-background px-2 py-1 text-sm"
+            placeholder="Any special instructions or comments..."
+          />
+        </div>
+
+        <div className="space-y-1">
+        <Label htmlFor="attachments" className="text-xs">Attachments (Optional)</Label>
+        <Input
+          id="attachments"
+          type="file"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.txt"
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            const validFiles = files.filter(file => {
+              if (file.size > 10 * 1024 * 1024) {
+                toast.error(`${file.name} exceeds 10MB limit`);
+                return false;
+              }
+              return true;
+            });
+            setPendingFiles(prev => [...prev, ...validFiles]);
+          }}
+          className="cursor-pointer"
         />
+        {pendingFiles.length > 0 && (
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-muted-foreground">{pendingFiles.length} file(s) ready to upload:</p>
+            <ul className="text-sm space-y-1">
+              {pendingFiles.map((file, idx) => (
+                <li key={idx} className="flex items-center justify-between p-2 bg-muted rounded">
+                  <span className="truncate">{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+          <p className="text-xs text-muted-foreground">Max 10MB per file • PDF, Images, Word, Excel, Text</p>
+        </div>
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-end space-x-4">
+      <div className="flex justify-end space-x-2 pt-1">
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>

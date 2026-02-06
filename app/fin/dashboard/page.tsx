@@ -3,14 +3,24 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText, DollarSign, CheckCircle, Clock, Database } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getInvoiceStats } from "@/app/actions/invoices";
 
 export default async function FINDashboard() {
-  // In a real implementation, you'd have an INVC table
-  // For now, we'll show placeholder data
-  const totalInvoices = 0;
-  const pendingInvoices = 0;
-  const processedInvoices = 0;
-  const totalAmount = 0;
+  // Fetch real invoice statistics
+  const statsResult = await getInvoiceStats();
+  const stats = statsResult.success ? statsResult.data : { total: 0, pending: 0, processed: 0, complete: 0 };
+  
+  const totalInvoices = stats.total;
+  const pendingInvoices = stats.pending;
+  const processedInvoices = stats.processed + stats.complete;
+  
+  // Calculate total amount from invoice lines
+  const invoiceLinesTotal = await prisma.invoiceLine.aggregate({
+    _sum: {
+      itemAmt: true,
+    },
+  });
+  const totalAmount = invoiceLinesTotal._sum.itemAmt ? Number(invoiceLinesTotal._sum.itemAmt) : 0;
 
   return (
     <div className="space-y-8">

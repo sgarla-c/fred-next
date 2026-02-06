@@ -5,12 +5,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Running DB checks...");
 
-  const [districts, sections, nigps, users, rentals] = await Promise.all([
+  const [districts, sections, nigps, users, rentals, pos, rentalPos, invoices, invoiceLines, claims] = await Promise.all([
     prisma.district.count(),
     prisma.section.count(),
     prisma.nigp.count(),
     prisma.user.count(),
     prisma.rental.count(),
+    prisma.purchaseOrder.count(),
+    prisma.rentalPo.count(),
+    prisma.invoice.count(),
+    prisma.invoiceLine.count(),
+    prisma.claim.count(),
   ]);
 
   console.log(`Districts: ${districts}`);
@@ -18,6 +23,11 @@ async function main() {
   console.log(`NIGP: ${nigps}`);
   console.log(`Users: ${users}`);
   console.log(`Rentals: ${rentals}`);
+  console.log(`Purchase Orders: ${pos}`);
+  console.log(`Rental-PO Links: ${rentalPos}`);
+  console.log(`Invoices: ${invoices}`);
+  console.log(`Invoice Lines: ${invoiceLines}`);
+  console.log(`Claims: ${claims}`);
 
   // Note: Counts are informational; UI may add data beyond seeds.
   let ok = true;

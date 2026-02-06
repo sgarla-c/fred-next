@@ -44,13 +44,13 @@ export default async function RCRentalsPage() {
   const rentals = rentalsData.map(serializeDecimal);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Rental Requests</h1>
-          <p className="text-gray-600 mt-2">Manage and process equipment rental requests</p>
+          <h1 className="text-2xl font-bold text-gray-900">All Rental Requests</h1>
+          <p className="text-gray-600 text-sm">Manage and process equipment rental requests</p>
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2" size="sm">
           <Search className="h-4 w-4" />
           Search
         </Button>
@@ -64,21 +64,21 @@ export default async function RCRentalsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {rentals.map((rental) => (
             <Card key={rental.rentalId} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base">
                       {rental.nigp?.dscr || "Equipment Rental"}
                     </CardTitle>
-                    <CardDescription className="mt-2">
+                    <CardDescription className="mt-1 text-xs">
                       ID: {rental.rentalId} | By: {rental.rqstBy} | {rental.district.distNm} - {rental.section.sectNm}
                     </CardDescription>
                   </div>
                   <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${
                       rental.rentStatus === "Active"
                         ? "bg-green-100 text-green-700"
                         : rental.rentStatus === "Submitted"
@@ -92,37 +92,39 @@ export default async function RCRentalsPage() {
                   </span>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Submitted</p>
-                    <p className="font-medium">
-                      {rental.submitDt ? new Date(rental.submitDt).toLocaleDateString() : "N/A"}
-                    </p>
+              <CardContent className="pt-2">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs flex-1">
+                    <div>
+                      <p className="text-gray-600">Submitted</p>
+                      <p className="font-medium">
+                        {rental.submitDt ? new Date(rental.submitDt).toLocaleDateString() : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Equipment</p>
+                      <p className="font-medium">{rental.eqpmtMake || "N/A"} {rental.eqpmtModel || ""}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Duration</p>
+                      <p className="font-medium">{rental.durLngth || "N/A"} {rental.durUom || ""}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Due Date</p>
+                      <p className="font-medium">
+                        {rental.rentalDueDt ? new Date(rental.rentalDueDt).toLocaleDateString() : "N/A"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-600">Equipment</p>
-                    <p className="font-medium">{rental.eqpmtMake || "N/A"} {rental.eqpmtModel || ""}</p>
+                  <div className="flex gap-2">
+                    <Link href={`/rc/rentals/${rental.rentalId}`}>
+                      <Button variant="outline" size="sm">View Details</Button>
+                    </Link>
+                    <ProcessRentalButton 
+                      rentalId={rental.rentalId} 
+                      currentStatus={rental.rentStatus || "Submitted"}
+                    />
                   </div>
-                  <div>
-                    <p className="text-gray-600">Duration</p>
-                    <p className="font-medium">{rental.durLngth || "N/A"} {rental.durUom || ""}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Due Date</p>
-                    <p className="font-medium">
-                      {rental.rentalDueDt ? new Date(rental.rentalDueDt).toLocaleDateString() : "N/A"}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t flex justify-end gap-2">
-                  <Link href={`/rc/rentals/${rental.rentalId}`}>
-                    <Button variant="outline" size="sm">View Details</Button>
-                  </Link>
-                  <ProcessRentalButton 
-                    rentalId={rental.rentalId} 
-                    currentStatus={rental.rentStatus || "Submitted"}
-                  />
                 </div>
               </CardContent>
             </Card>

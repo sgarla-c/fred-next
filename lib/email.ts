@@ -1,62 +1,8 @@
-import nodemailer from "nodemailer";
+// EMAIL FUNCTIONALITY DISABLED
+// Nodemailer has been temporarily disabled due to module resolution issues with Turbopack
+// All email functions are stubbed out and will log instead of sending emails
 
-// Email configuration
-const EMAIL_CONFIG = {
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-};
-
-const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@txdot.gov";
-
-// Create reusable transporter
-let transporter: nodemailer.Transporter | null = null;
-let testAccount: any = null;
-
-async function getTransporter() {
-  if (transporter) {
-    return transporter;
-  }
-
-  // If SMTP is not configured, create a test account with Ethereal Email
-  if (!process.env.SMTP_USER) {
-    console.log("📧 SMTP not configured. Creating Ethereal test account...");
-    
-    try {
-      // Create a test account with Ethereal (fake SMTP service)
-      testAccount = await nodemailer.createTestAccount();
-      
-      console.log("✅ Ethereal test account created:");
-      console.log("   Email:", testAccount.user);
-      console.log("   Password:", testAccount.pass);
-      console.log("   Preview URL: https://ethereal.email/messages");
-      
-      transporter = nodemailer.createTransport({
-        host: testAccount.smtp.host,
-        port: testAccount.smtp.port,
-        secure: testAccount.smtp.secure,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-      
-      return transporter;
-    } catch (error) {
-      console.error("Failed to create Ethereal test account:", error);
-      return null;
-    }
-  }
-
-  // Use configured SMTP
-  transporter = nodemailer.createTransport(EMAIL_CONFIG);
-  return transporter;
-}
-
+// Types for email notifications
 export interface RentalNotificationData {
   rentalId: number;
   requestedBy: string;
@@ -70,154 +16,65 @@ export interface RentalNotificationData {
 
 /**
  * Send rental approval notification to RC users
+ * CURRENTLY DISABLED - Only logs the email that would be sent
  */
 export async function sendRentalApprovalNotification(
   toEmails: string[],
   rentalData: RentalNotificationData
 ) {
-  const transporter = await getTransporter();
-
-  if (!transporter) {
-    console.error("❌ Failed to create email transporter");
-    return { success: false, error: "Email service unavailable" };
-  }
-
-  const subject = `New Rental Request #${rentalData.rentalId} - Approval Required`;
+  console.log("📧 [EMAIL DISABLED] Would have sent rental approval notification:");
+  console.log("   To:", toEmails.join(", "));
+  console.log("   Rental ID:", rentalData.rentalId);
+  console.log("   Requested By:", rentalData.requestedBy);
+  console.log("   Equipment:", rentalData.equipmentType);
+  console.log("   District/Section:", `${rentalData.district} - ${rentalData.section}`);
   
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #003366; color: white; padding: 20px; text-align: center; }
-        .content { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
-        .details { background-color: white; padding: 15px; margin: 15px 0; border-left: 4px solid #003366; }
-        .detail-row { margin: 10px 0; }
-        .label { font-weight: bold; color: #003366; }
-        .button { display: inline-block; padding: 12px 24px; background-color: #003366; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>FRED - New Rental Request</h1>
-        </div>
-        
-        <div class="content">
-          <p>A new equipment rental request has been submitted and requires your approval.</p>
-          
-          <div class="details">
-            <div class="detail-row">
-              <span class="label">Rental ID:</span> #${rentalData.rentalId}
-            </div>
-            <div class="detail-row">
-              <span class="label">Requested By:</span> ${rentalData.requestedBy}
-            </div>
-            <div class="detail-row">
-              <span class="label">District:</span> ${rentalData.district}
-            </div>
-            <div class="detail-row">
-              <span class="label">Section:</span> ${rentalData.section}
-            </div>
-            <div class="detail-row">
-              <span class="label">Equipment Type:</span> ${rentalData.equipmentType}
-            </div>
-            ${rentalData.deliveryDate ? `
-            <div class="detail-row">
-              <span class="label">Delivery Date:</span> ${rentalData.deliveryDate}
-            </div>
-            ` : ''}
-            ${rentalData.deliveryLocation ? `
-            <div class="detail-row">
-              <span class="label">Delivery Location:</span> ${rentalData.deliveryLocation}
-            </div>
-            ` : ''}
-          </div>
-          
-          <div style="text-align: center;">
-            <a href="${rentalData.approvalLink}" class="button">
-              Review & Approve Request
-            </a>
-          </div>
-          
-          <p style="margin-top: 20px; font-size: 14px; color: #666;">
-            Click the button above to view the full rental details and process the approval.
-          </p>
-        </div>
-        
-        <div class="footer">
-          <p>This is an automated notification from the FRED system.</p>
-          <p>TxDOT Fleet Rental Equipment Database</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  const textContent = `
-New Rental Request #${rentalData.rentalId} - Approval Required
-
-A new equipment rental request has been submitted and requires your approval.
-
-Rental Details:
-- Rental ID: #${rentalData.rentalId}
-- Requested By: ${rentalData.requestedBy}
-- District: ${rentalData.district}
-- Section: ${rentalData.section}
-- Equipment Type: ${rentalData.equipmentType}
-${rentalData.deliveryDate ? `- Delivery Date: ${rentalData.deliveryDate}` : ''}
-${rentalData.deliveryLocation ? `- Delivery Location: ${rentalData.deliveryLocation}` : ''}
-
-To review and approve this request, please visit:
-${rentalData.approvalLink}
-
----
-This is an automated notification from the FRED system.
-TxDOT Fleet Rental Equipment Database
-  `;
-
-  try {
-    const info = await transporter.sendMail({
-      from: `FRED System <${FROM_EMAIL}>`,
-      to: toEmails.join(", "),
-      subject,
-      text: textContent,
-      html: htmlContent,
-    });
-
-    console.log("✅ Email sent successfully:", info.messageId);
-    
-    // If using Ethereal (test account), show preview URL
-    if (testAccount) {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      console.log("📬 Preview email at:", previewUrl);
-      return { success: true, messageId: info.messageId, previewUrl };
-    }
-    
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error("❌ Error sending email:", error);
-    return { success: false, error: String(error) };
-  }
+  return {
+    success: true,
+    message: "Email functionality is disabled - notification logged only",
+    messageId: "disabled",
+    previewUrl: null,
+  };
 }
 
 /**
- * Test email configuration
+ * Send rental denial notification
+ * CURRENTLY DISABLED - Only logs the email that would be sent
  */
-export async function testEmailConnection() {
-  const transporter = await getTransporter();
+export async function sendRentalDenialNotification(
+  toEmail: string,
+  rentalData: any
+) {
+  console.log("📧 [EMAIL DISABLED] Would have sent rental denial notification:");
+  console.log("   To:", toEmail);
+  console.log("   Rental ID:", rentalData.rentalId);
   
-  if (!transporter) {
-    return { success: false, error: "Failed to create transporter" };
-  }
-
-  try {
-    await transporter.verify();
-    return { success: true, testAccount: testAccount?.user };
-  } catch (error) {
-    return { success: false, error: String(error) };
-  }
+  return {
+    success: true,
+    message: "Email functionality is disabled - notification logged only",
+  };
 }
+
+/**
+ * Send rental approval confirmation
+ * CURRENTLY DISABLED - Only logs the email that would be sent
+ */
+export async function sendRentalApprovalConfirmation(
+  toEmail: string,
+  rentalData: any
+) {
+  console.log("📧 [EMAIL DISABLED] Would have sent rental approval confirmation:");
+  console.log("   To:", toEmail);
+  console.log("   Rental ID:", rentalData.rentalId);
+  
+  return {
+    success: true,
+    message: "Email functionality is disabled - notification logged only",
+  };
+}
+
+// Note: To re-enable email functionality in the future:
+// 1. Install nodemailer: npm install nodemailer @types/nodemailer
+// 2. Restore the original implementation with proper email templates
+// 3. Configure SMTP settings in .env file
+// 4. Add nodemailer to next.config.ts serverExternalPackages if needed

@@ -3,23 +3,36 @@
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { User } from "next-auth";
+import Link from "next/link";
 
 interface NavBarProps {
   user: User;
 }
 
+const ROLE_DASHBOARDS: Record<string, string> = {
+  ES: "/es/dashboard",
+  RC: "/rc/dashboard",
+  FIN: "/fin/dashboard",
+  Manager: "/manager/dashboard",
+  ADMIN: "/manager/dashboard",
+  "Dist User": "/es/dashboard",
+  "Data Entry": "/rc/dashboard",
+};
+
 export function NavBar({ user }: NavBarProps) {
+  const dashboardUrl = ROLE_DASHBOARDS[user.role || "ES"] || "/es/dashboard";
+
   return (
     <nav className="bg-white border-b shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <div className="flex items-center">
+            <Link href={dashboardUrl} className="flex items-center hover:opacity-80 transition-opacity cursor-pointer">
               <h1 className="text-xl font-bold text-gray-900">FRED</h1>
               <span className="ml-2 text-sm text-gray-500">
                 Fleet Rental Equipment Database
               </span>
-            </div>
+            </Link>
           </div>
 
           <div className="flex items-center space-x-4">

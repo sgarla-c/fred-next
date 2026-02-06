@@ -8,6 +8,7 @@ import { POLinkManager } from "@/components/po-link-manager";
 import { ProcessRentalButton } from "@/components/process-rental-button";
 import { DenyRentalButton } from "@/components/deny-rental-button";
 import { Decimal } from "@prisma/client/runtime/library";
+import { RentalAttachments } from "@/components/rental-attachments";
 
 interface RentalDetailPageProps {
   params: Promise<{ id: string }>;
@@ -23,7 +24,11 @@ function serializeDecimal<T>(obj: T): any {
   return JSON.parse(JSON.stringify(obj, (key, value) => {
     // Custom replacer to handle Decimal and Date
     if (value && typeof value === 'object') {
-      // Check for Decimal
+      // Check for Decimal using instanceof
+      if (value instanceof Decimal) {
+        return Number(value.toString());
+      }
+      // Also check constructor name as fallback
       if (value.constructor && value.constructor.name === 'Decimal') {
         return Number(value.toString());
       }
@@ -51,6 +56,11 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
           purchaseOrder: true,
         },
       },
+      attachments: {
+        orderBy: {
+          uploadedAt: "desc",
+        },
+      },
     },
   });
 
@@ -62,7 +72,7 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
   const rental = serializeDecimal(rentalData);
 
   // Get all POs that are not already linked to this rental
-  const availablePOs = await prisma.purchaseOrder.findMany({
+  const availablePOsData = await prisma.purchaseOrder.findMany({
     where: {
       NOT: {
         rentalPos: {
@@ -75,7 +85,12 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
     orderBy: { poId: "desc" },
   });
 
-  const linkedPOs = rental.rentalPos.map((rp: any) => rp.purchaseOrder);
+  // Serialize availablePOs to convert Decimal fields
+  const availablePOs = serializeDecimal(availablePOsData);
+
+  // Extract and serialize linkedPOs to ensure Decimal fields are converted
+  const linkedPOsData = rental.rentalPos.map((rp: any) => rp.purchaseOrder);
+  const linkedPOs = serializeDecimal(linkedPOsData);
 
   return (
     <div className="space-y-6">
@@ -336,6 +351,19 @@ export default async function RentalDetailPage({ params }: RentalDetailPageProps
               {!rental.cfDeptNbr && !rental.cfAcctNbr && !rental.cfFund && !rental.cfProj && (
                 <p className="text-sm text-muted-foreground">No chartfield data</p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Attachments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RentalAttachments
+                rentalId={rental.rentalId}
+                attachments={rental.attachments}
+                readOnly={false}
+              />
             </CardContent>
           </Card>
 

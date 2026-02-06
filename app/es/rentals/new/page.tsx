@@ -25,15 +25,12 @@ export default async function ESRentalNewPage() {
   }
 
   return (
-    <div className="max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Submit Rental Request</h1>
-        <p className="text-gray-600 mt-2">
-          Complete the form below to submit a new equipment rental request.
-        </p>
+    <div className="max-w-7xl">
+      <div className="mb-2">
+        <h1 className="text-lg font-bold text-gray-900">Submit Rental Request</h1>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
         <RentalForm 
           districts={districtsResult.data || []} 
           nigpCodes={nigpResult.data || []} 

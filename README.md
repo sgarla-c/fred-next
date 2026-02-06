@@ -1,36 +1,175 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FRED Next.js Application
 
-## Getting Started
+Modern Next.js rewrite of the FRED (Fleet Rental Equipment Database) application for TxDOT.
 
-First, run the development server:
+## ⚠️ IMPORTANT: Docker-Only Execution
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**This application MUST run from Docker containers.** Local execution is blocked by design.
+
+See [README_DOCKER.md](README_DOCKER.md) for quick reference or [DOCKER_ONLY_EXECUTION.md](DOCKER_ONLY_EXECUTION.md) for full details.
+
+## Quick Start
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+### Start Application
+
+```powershell
+# Option 1: Using npm script (recommended)
+npm run docker:start
+
+# Option 2: Using PowerShell script
+.\start-docker.ps1
+
+# Option 3: Using Docker Compose directly
+docker-compose --profile dev up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at: **http://localhost:3100**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Other Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+# Stop application
+npm run docker:stop
 
-## Learn More
+# View logs
+npm run docker:logs
 
-To learn more about Next.js, take a look at the following resources:
+# Rebuild containers
+npm run docker:rebuild
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Check Docker status
+npm run docker:check
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Stop Application
+```powershell
+# Using npm script
+npm run docker:stop
 
-## Deploy on Vercel
+# Or using PowerShell script
+.\stop-docker.ps1
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Or using Docker Compose
+docker-compose --profile dev down
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ❌ Blocked Commands
+
+The following commands are **intentionally blocked** to prevent local execution issues:
+
+```powershell
+npm run dev    # ❌ BLOCKED - Use npm run docker:start instead
+npm run build  # ❌ BLOCKED - Build happens in Docker
+npm run start  # ❌ BLOCKED - Use Docker commands
+```
+
+**Why?** The database is configured to connect to `postgres` (Docker service name), not `localhost`. Running locally will fail.
+
+## 🚨 If Docker Goes Down
+
+If Docker Desktop crashes or stops:
+
+1. **Start Docker Desktop** and wait 30 seconds
+2. **Verify Docker is running**: `docker ps`
+3. **Restart the application**: `npm run docker:start`
+
+**Do NOT attempt to modify configuration files or run locally.** The application is designed to fail fast and clearly when Docker is unavailable.
+
+## 📚 Documentation
+
+- [README_DOCKER.md](README_DOCKER.md) - Quick Docker reference
+- [DOCKER_ONLY_EXECUTION.md](DOCKER_ONLY_EXECUTION.md) - Complete guide to Docker-only execution
+- [DOCKER_CONFIGURATION.md](DOCKER_CONFIGURATION.md) - Detailed Docker configuration
+- [DOCKER_GUIDE.md](DOCKER_GUIDE.md) - Docker usage guide
+- [QUICK_START.md](QUICK_START.md) - Quick start guide
+
+## Architecture
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your database credentials
+
+# Run database migrations
+npx prisma migrate dev
+
+# Seed the database
+npx prisma db seed
+
+# Start development server
+npm run dev
+```
+
+Open [http://localhost:3100](http://localhost:3100) with your browser.
+
+## Features
+
+- ✅ Rental Request Management (Submit, View, Edit, Approve/Deny)
+- ✅ Purchase Order Management (Create, Link to Rentals)
+- ✅ File Attachments (Upload/Download for rentals)
+- ✅ Role-based Access (ES, RC, FIN, Manager)
+- ✅ Status History Tracking
+- ✅ Dashboard with Statistics
+
+## Project Structure
+
+```
+fred-next/
+├── app/                 # Next.js App Router pages
+│   ├── es/             # Equipment Section module
+│   ├── rc/             # Rental Coordinator module
+│   ├── fin/            # Finance module
+│   ├── manager/        # Manager module
+│   └── api/            # API routes
+├── components/          # React components
+├── lib/                # Utilities and database
+├── prisma/             # Database schema and migrations
+├── public/             # Static files
+│   └── uploads/        # File attachments
+└── docker-compose.yml  # Docker configuration
+```
+
+## Database
+
+PostgreSQL database with Prisma ORM. Key tables:
+- `RENTAL` - Rental requests
+- `RENTAL_ATTACHMENT` - File attachments
+- `RENTAL_STATUS_HISTORY` - Status change tracking
+- `PO` - Purchase orders
+- `USERS` - User accounts
+- `DIST`, `SECTION`, `NIGP` - Reference data
+
+## Environment Variables
+
+Required environment variables (in `.env.local`):
+- `DATABASE_URL` - PostgreSQL connection string
+- `NEXTAUTH_URL` - Application URL
+- `NEXTAUTH_SECRET` - JWT secret for authentication
+
+## Default Test Accounts
+
+- ES User: `SGARLA-C` / `password123`
+- RC User: `rc-user` / `password123`
+- Manager: `manager-user` / `password123`
+
+## Documentation
+
+- [Quick Start Guide](QUICK_START.md)
+- [Setup Guide](SETUP.md)
+- [Feature Comparison](FEATURE_COMPARISON.md)
+- [Rental Attachments](RENTAL_ATTACHMENTS.md)
+- [Docker Guide](DOCKER_GUIDE.md)
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Database**: PostgreSQL 16
+- **ORM**: Prisma
+- **Authentication**: NextAuth.js
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Containerization**: Docker & Docker Compose

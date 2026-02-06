@@ -5,9 +5,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { RentalAttachments } from "@/components/rental-attachments";
 
 interface LifecyclePageProps {
   params: Promise<{ id: string }>;
+}
+
+// Helper to serialize Decimal and Date fields for Client Components
+function serializeDecimal<T>(obj: T): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  // Convert to JSON and back to strip all prototypes, constructors, and functions
+  return JSON.parse(JSON.stringify(obj, (key, value) => {
+    // Custom replacer to handle Decimal and Date
+    if (value && typeof value === 'object') {
+      // Check for Decimal
+      if (value.constructor && value.constructor.name === 'Decimal') {
+        return Number(value.toString());
+      }
+      // Check for Date
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+    }
+    return value;
+  }));
 }
 
 export default async function ManagerRentalLifecyclePage({ params }: LifecyclePageProps) {
@@ -22,17 +46,25 @@ export default async function ManagerRentalLifecyclePage({ params }: LifecyclePa
   const { id } = await params;
   const rentalId = parseInt(id);
 
-  const rental = await prisma.rental.findUnique({
+  const rentalData = await prisma.rental.findUnique({
     where: { rentalId },
     include: {
       district: true,
       section: true,
       nigp: true,
+      attachments: {
+        orderBy: {
+          uploadedAt: "desc",
+        },
+      },
     },
   });
-  if (!rental) {
+  if (!rentalData) {
     notFound();
   }
+
+  // Serialize Decimal fields
+  const rental = serializeDecimal(rentalData);
 
   const history = await prisma.rentalStatusHistory.findMany({
     where: { rentalId },
@@ -129,6 +161,18 @@ export default async function ManagerRentalLifecyclePage({ params }: LifecyclePa
                 <p className="text-sm text-muted-foreground">Submit Date</p>
                 <p className="font-medium">{rental.submitDt ? new Date(rental.submitDt).toLocaleDateString() : "N/A"}</p>
               </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Attachments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RentalAttachments
+                rentalId={rental.rentalId}
+                attachments={rental.attachments as any}
+                readOnly={true}
+              />
             </CardContent>
           </Card>
         </div>

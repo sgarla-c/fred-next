@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Edit } from "lucide-react";
 import { Decimal } from "@prisma/client/runtime/library";
 import { DeleteRentalButton } from "@/components/delete-rental-button";
+import { RentalAttachments } from "@/components/rental-attachments";
 
 interface RentalDetailPageProps {
   params: Promise<{ id: string }>;
@@ -54,6 +55,11 @@ export default async function ESRentalDetailPage({ params }: RentalDetailPagePro
       rentalPos: {
         include: {
           purchaseOrder: true,
+        },
+      },
+      attachments: {
+        orderBy: {
+          uploadedAt: "desc",
         },
       },
     },
@@ -357,6 +363,19 @@ export default async function ESRentalDetailPage({ params }: RentalDetailPagePro
               {!rental.cfDeptNbr && !rental.cfAcctNbr && !rental.cfFund && !rental.cfProj && (
                 <p className="text-sm text-muted-foreground">No chartfield data</p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Attachments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RentalAttachments
+                rentalId={rental.rentalId}
+                attachments={rental.attachments}
+                readOnly={false}
+              />
             </CardContent>
           </Card>
 

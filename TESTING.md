@@ -295,12 +295,12 @@ Notes: Automated E2E script asserts staying on form and >=5 visible errors. Some
 3. Open the submitted rental and approve.
 
 Expected:
-- [ ] Status changes to "Approved"
-- [ ] Audit trail records approver and timestamp
-- [ ] Notification/toast confirms approval
+- [x] Status changes to "Approved"
+- [x] Audit trail records approver and timestamp
+- [x] Notification/toast confirms approval
 
 **Test Result:** [x] PASS / [ ] FAIL
-Notes: Status transitions to "Active" after approval & activation.
+Notes: Status transitions to "Active" after approval & activation. Automated E2E test verified on 2026-02-04.
 
 ### 8.2 FIN/Manager Approval (If applicable)
 - [ ] Role-based access shows finance fields to FIN user
